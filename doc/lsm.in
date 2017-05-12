@@ -1,0 +1,15 @@
+Begin3
+Title:		@PACKAGE@
+Version:	@VERSION@
+Entered-date:	06FEB06
+Description:	Junk Mail Buffering Agent - queues possibly unwanted email
+		until the sender has verified that they exist.
+Keywords:	email buffer, spam filter, antispam, UCE
+Author:		Andrew Wood <andrew.wood@ivarch.com>
+Maintained-by:	Andrew Wood <andrew.wood@ivarch.com>
+Primary-site:	http://www.ivarch.com/programs/@PACKAGE@.shtml
+Alternate-site:	
+Original-site:
+Platforms:	
+Copying-policy:	Artistic
+End

@@ -1,0 +1,368 @@
+JMBA(1)				 User Manuals			      JMBA(1)
+
+NAME
+       jmba - junk mail buffering agent
+
+SYNOPSIS
+       jmba [-d QUEUEDIR] [-m MSGFILE] [-s SUBJECT] [-FbtTv] [-f NUM[,KB]]
+       jmba [-d QDIR] [-e EXPIRY] [-x CMD] -q [-- COMMAND...]
+       jmba -S
+       jmba -[p|h|l|V]
+
+DESCRIPTION
+       jmba  is	 a  tool  to queue email until the sender's email address has
+       been verified, at which point the original email is delivered.
+
+       What this means is that when jmba receives  an  email,  it  puts	 that
+       email  into  a queue instead of delivering it to you, and sends a mes-
+       sage to the sender of the email.	 If the sender of the email  responds
+       correctly  to  jmba's message, the original email is unfrozen from the
+       queue and delivered to you.  If they do not, the original email	even-
+       tually expires and you never see it.
+
+       jmba  is designed to be used in conjunction with a spam filter such as
+       qsf(1); when the spam filter says it thinks an email is spam,  it  can
+       be passed to jmba, which can then verify whether a real person sent it
+       or not.
+
+       This works on the assumption that senders of spam won't reply  to  the
+       email  address  in  the	headers, but senders of real email will.  The
+       vast majority of spam is sent with forged envelope sender addresses so
+       it always appears to have come from an invalid address.
+
+       For correct operation, four things are needed:
+
+       1.     Deliver  any  email,  without  question, if the $1 parameter is
+	      JMBAPASSTHROUGH.
+
+       2.     Pass any email with a subject line containing the reply email's
+	      SUBJECT  (as  defined  by	 -s  / --subject) to jmba, and do not
+	      deliver it.
+
+       3.     Pass any other email you want filtered, e.g. email that  qsf(1)
+	      or  other	 spam  filters	suggest	 is spam, to jmba, and do not
+	      deliver it.
+
+       4.     Regularly run jmba -q to deliver any  queued  email  into	 your
+	      mailbox whose sender has verified their existence.
+
+       See the EXAMPLES section for examples of how this can be done.
+
+OPTIONS
+       The jmba options are listed below.
+
+       -d, --queue-dir DIR
+	      Store  queued  messages  in  DIR,	 instead  of  the  default of
+	      $HOME/.jmba/queue.
+
+       -e, --expiry-time DAYS
+	      Expire queued messages after DAYS days, instead of the  default
+	      of 28.
+
+       -m, --message-file FILE
+	      Read  the	 reply	template  from FILE instead of the default of
+	      $HOME/.jmba/template.  See the FILES section for information on
+	      the contents of this file.
+
+       -D, --discard-dir DIR
+	      Store  discarded	messages  in  DIR,  instead of the default of
+	      $HOME/.jmba/discarded.  See the FILES section for more informa-
+	      tion.
+
+       -L, --log-file FILE
+	      Enable  logging,	and write logs to FILE instead of the default
+	      of $HOME/.jmba/log.
+
+       -x, --discard-command COMMAND
+	      Each time a message is discarded, run COMMAND with the  message
+	      on standard input.  This can be useful for retraining spam fil-
+	      ters; for instance the command could be qsf --mark-spam.	 Note
+	      that  COMMAND  should be quoted from the shell so it appears as
+	      one argument.
+
+       -s, --subject STRING
+	      Use STRING as the subject line of each reply,  instead  of  the
+	      default of "Email queued by JMBA".  A message ID string will be
+	      added to the end of this string.
+
+       -t, --no-to-self
+	      Discard any email whose "From:" and  "To:"  addresses  are  the
+	      same,  instead  of  generating  replies.	 This  is  enabled by
+	      default.
+
+       -T, --to-self, --allow-to-self
+	      Allow email whose "From:" and "To:" addresses are the  same  to
+	      generate replies.
+
+       -v, --verbose
+	      Log  information	about  what  jmba  is  doing  to the log file
+	      ($HOME/.jmba/log by default).
+
+       -f, --flood-check NUM[,KB]
+	      Before queueing a message, check the last KB kilobytes  of  the
+	      log file (default 50) for messages from the same sender address
+	      which were queued but  which  have  not  yet  bounced  or	 been
+	      unlocked.	  If  there  are  more than NUM of them (default 20),
+	      discard the message instead of queueing it.  This helps prevent
+	      flooding caused by brain-dead autoresponders, and is enabled by
+	      default.
+
+       -F, --no-flood-check
+	      Switch off flood checking.
+
+       -b, --bounce
+	      Assume that the email on standard input is  a  bounce  message.
+	      The  email  is  not  queued,  and	 if a valid queue ID is found
+	      within the email, the queued email it  refers  to	 is  deleted.
+	      This  allows queued messages from invalid senders to be removed
+	      from the queue early.
+
+       -q, --queue -- COMMAND
+	      For every message in the queue that has been flagged as OK, run
+	      COMMAND  with the message on standard input and delete the mes-
+	      sage if the command exited successfully.	All  subsequent	 com-
+	      mand line items are taken as part of the command, eg jmba -q --
+	      procmail -a JMBAPASSTHROUGH -d $LOGNAME.	The default  command,
+	      if  none	is specified, is procmail -a JMBAPASSTHROUGH -d $LOG-
+	      NAME.
+
+       -S, --decode-subject
+	      Read an email on standard input, find the first  subject	line,
+	      decode it if it is encoded, and output it on standard output.
+
+       -p, --procmail
+	      Print an example procmail(1) recipe on standard output and exit
+	      successfully.
+
+       -h, --help
+	      Print a usage message on standard output and exit successfully.
+
+       -l, --license
+	      Print  details  of the program's license on standard output and
+	      exit successfully.
+
+       -V, --version
+	      Print version information on standard output and exit  success-
+	      fully.
+
+FILES
+       These  files  and directories are created automatically if they do not
+       exist and you have not specified an alternative.
+
+       $HOME/.jmba/queue
+	      The default queue directory.  This is where queued messages are
+	      stored.	Make  sure there is enough space in this directory to
+	      store plenty of queued mail.
+
+       $HOME/.jmba/template
+	      The default reply template.  The reply template is the  message
+	      that gets sent in reply to any incoming email, and must contain
+	      the string {MESSAGEKEY} (all capitals, surrounded by  {}	curly
+	      braces) somewhere.  The {MESSAGEKEY} text is replaced by a spe-
+	      cial string which identifies the original message.  The recipi-
+	      ent  must	 reply	back, with the subject line unchanged and the
+	      message body containing this string, for their original message
+	      to be unfrozen.
+
+	      The  template can also contain {MESSAGECODE}, which is replaced
+	      by just the 32-character hex code on its own, {USER}, which  is
+	      replaced	by the username that jmba is running under, {SENDER},
+	      which is replaced by the email address of the original  sender,
+	      {RECIPIENT}, which is replaced by the email address the message
+	      was sent to (i.e. your email address) if it appeared in the To:
+	      header - or "<unknown>" if it didn't - and {ORIGINAL}, which is
+	      replaced by an excerpt (around 9 lines) of the message jmba  is
+	      replying to.
+
+       $HOME/.jmba/discarded
+	      If  this	directory exists (it is not created by default), then
+	      any messages that are thrown out of the queue due to  either  a
+	      bounce message or a reply timeout will be moved here instead of
+	      deleted.	This can be useful if you want to keep a copy of  old
+	      spam  to	retrain spam filters with.  Note: this directory must
+	      be on the same filesystem as the queue directory, otherwise  it
+	      will not work.
+
+       $HOME/.jmba/log
+	      The  default log file, written to if the -v (verbose) option is
+	      given.
+
+EXAMPLES
+       The following can be added to your .procmailrc file, after any special
+       filtering you already do for mailing lists and such:
+
+	       #
+	       # Example procmail recipe
+	       #
+	       # Put this AFTER rules for mailing lists,
+	       # so that we don't trip up on them!
+	       #
+
+	       # First, we'll set up some variables.
+	       #
+	       JMBAMAINEMAIL="your@own.mail.address"
+	       JMBASUBJECT="Email queued by JMBA"
+	       TESTPASS=$1
+	       SUBJECT='jmba -S'
+
+	       # Step 1:
+	       # Filter messages only if the pass-through flag
+	       # is not set and the message is small.
+	       #
+	       :0
+	       * ! TESTPASS ?? JMBAPASSTHROUGH
+	       * ! > 500000
+	       {
+		  # Step 2:
+		  # Discard any looping mail.
+		  #
+		  :0
+		  * $ ^X-Loop: $JMBAMAINEMAIL
+		  /dev/null
+
+		  # Step 3:
+		  # Deal with any bounces.
+		  #
+		  :0
+		  * ^FROM_MAILER
+		  {
+		     :0 Bw
+		     * $ SUBJECT ?? .*$JMBASUBJECT
+		     | jmba -v -b
+
+		     :0 Bw
+		     * $ ^X-Loop: $JMBAMAINEMAIL
+		     | jmba -v -b
+		  }
+
+		  # Step 4:
+		  # Pass any sender's replies straight to the program.
+		  #
+		  :0 w
+		  * ! ^FROM_DAEMON
+		  * $ SUBJECT ?? .*$JMBASUBJECT
+		  | jmba -v -s "$JMBASUBJECT"
+
+		  # Step 5:
+		  # Check whether message is spam.
+		  #
+		  :0 wf
+		  | qsf -ra
+
+		  # Step 6:
+		  # Drop potential spam into the
+		  # queue, and send the reply email.
+		  #
+		  :0
+		  * ! ^FROM_DAEMON
+		  * !$ SUBJECT ?? .*$JMBASUBJECT
+		  * ! ^X-Spam: NO
+		  {
+		     # Generate the reply.
+		     :0 wf
+		     | jmba -t -v -s "$JMBASUBJECT"
+
+		     :0 Ha
+		     {
+			# Discard unaddressed responses.
+			:0
+			* ! ^To
+			/dev/null
+
+			# Add our loop catching header.
+			:0 wf
+			| formail -A "X-Loop: $JMBAMAINEMAIL"
+
+			# Add our From: address.
+			:0 wfa
+			| formail -I "From: $JMBAMAINEMAIL"
+
+			# Send the reply.
+			:0 wa
+			| $SENDMAIL $SENDMAILFLAGS -t
+		     }
+		  }
+	       }
+
+	       # Step 7:
+	       # Teach the spam filter that passed-through
+	       # messages are not spam.
+	       #
+	       :0 wc
+	       * TESTPASS ?? JMBAPASSTHROUGH
+	       | qsf -Ma
+
+	       #
+	       # End of example.
+	       # Don't forget to add "0 * * * * jmba -v -q"
+	       # to your crontab!
+	       #
+
+       Note  that  the above recipe can be generated by doing jmba -p > SOME-
+       FILE.
+
+       Then, add the following to your crontab(5) using the crontab  -e	 com-
+       mand,  to  deliver any queued messages that have been verified once an
+       hour:
+
+	       0 * * * * jmba -v -q
+
+       If you do not want to use qsf(1) as your spam filter, replace qsf  -ra
+       in the example procmail recipe above with a command that adds a header
+       saying whether the email is spam, replace qsf -Ma with a command	 that
+       trains  the spam filter to accept the given email on standard input as
+       non-spam, and replace the * ! ^X-Spam: NO line in step 6 with  a	 rule
+       that  uses  your	 spam  filter's inserted header to cause step 6 to be
+       skipped if the email is not spam.
+
+       For more on procmail(1)	recipes,  see  the  procmailrc(5)  and	proc-
+       mailex(5)  manual  pages.   For	more  on  command scheduling, see the
+       crontab(1) and crontab(5) manual pages.
+
+NOTES
+       If the full path of procmail is not found at  compile  time,  then  it
+       will  be called without a path. This means that users who are not sup-
+       posed to have shell accounts, but who have write access to a directory
+       in  the	default $PATH (such as ~/bin on some systems), could upload a
+       fake procmail and gain shell access.
+
+       Also, some systems do not set $PATH when running cron jobs.
+
+       It is therefore advisable to supply the full path  when	specifying  a
+       procmail	 command  with	the -q -- COMMAND option. The default command
+       contains the full path if no warning was generated at compile time.
+
+       This same problem exists with formail, which is called  by  jmba,  but
+       this  can  only	be  overcome if the full path to formail is correctly
+       determined at compile time.
+
+AUTHOR
+       The project maintainer is:
+
+	      Andrew Wood <andrew.wood@ivarch.com>
+	      http://www.ivarch.com/
+
+       Credit is also due to:
+
+	      Ondrej Suchy
+	      (provided Czech translation and code suggestions)
+
+	      Nick Rosier
+	      (suggested logging)
+
+       Project home page:
+
+	      http://www.ivarch.com/programs/jmba.shtml
+
+BUGS
+       If you find any bugs, please contact the author, either by email or by
+       using the contact form on the web site.
+
+SEE ALSO
+       procmail(1),  crontab(1),  procmailrc(5),  procmailex(5),  crontab(5),
+       qsf(1)
+
+LICENSE
+       This is free software, distributed under the ARTISTIC license.
+
+Linux				February 2006			      JMBA(1)

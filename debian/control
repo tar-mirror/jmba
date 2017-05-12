@@ -1,0 +1,19 @@
+Source: jmba
+Section: net
+Priority: optional
+Maintainer: Andrew Wood <andrew.wood@ivarch.com>
+Build-Depends: debhelper (>> 3.0.0), libc6 (>= 2.2.5), libc6-dev (>= 2.2.5)
+Standards-Version: 3.5.8
+
+Package: jmba
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Junk Mail Buffering Agent - an email sender address verifier
+ Junk Mail Buffering Agent (JMBA) is designed to queue potentially unwanted
+ email until the sender's email address has been verified, at which point
+ the original email is delivered.  It is intended for use in conjunction
+ with a spam filter such as QSF (http://www.ivarch.com/programs/qsf.shtml). 
+ When the spam filter says it thinks an email is spam, it can be passed to
+ JMBA.  JMBA will queue it and send an email to the sender containing a key;
+ if the sender replies, the original email is "unfrozen" from the queue and
+ delivered.

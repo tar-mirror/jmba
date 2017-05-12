@@ -1,0 +1,9 @@
+Things still to do:
+
+  * http://www.faqs.org/rfcs/rfc3834.html
+  * unit tests
+  * system-wide daemon to run instead of per-user cron jobs
+  * example CGI script to handle URLs
+  * get more translations
+
+Any assistance would be appreciated.

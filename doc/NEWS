@@ -1,0 +1,76 @@
+0.5.5 - 6 February 2006
+  - ignore files starting with "." in the queue directory
+  - include slightly more of the original message in replies
+  - added new {SENDER} tag in template
+  - added new {RECIPIENT} tag in template (sponsored by SpamDefy)
+
+0.5.1 - 8 July 2005
+  - bugfix to make flood protection actually work
+
+0.5.0 - 11 June 2005
+  - minor bugfix in subject line decoding
+  - log sender address on creation of queue entry
+  - cleaner wording in logs
+  - minor code cleanups
+  - added -T, -f, -F options (-f = flood protection)
+  - enabled flood protection (-f) by default
+  - enabled no-to-self (-t) by default
+
+0.4.5 - 25 September 2004
+  - new option "-x" to run a command on each discarded email;
+    this feature was sponsored by SpamDefy, http://www.spamdefy.com/
+
+0.4.4 - 23 September 2004
+  - new option "-S" to output decoded subject line
+
+0.4.3 - 8 September 2004
+  - accept message codes in the subject line, in case of blank replies
+
+0.4.2 - 15 June 2004
+  - corrected bug in default procmail recipe when used with "-t"
+
+0.4.1 - 14 June 2004
+  - new option "-t" to ignore emails with "from" and "to" addresses the same
+
+0.4.0 - 5 May 2004
+  - use the full path when calling procmail and formail
+  - added new {MESSAGECODE} tag in template
+  - added new {USER} tag in template
+  - added new {ORIGINAL} tag in template
+  - optionally keep a copy of spam, with the new "-D" (--discard-dir) option
+  - optional logging of queueing, bouncing, reply receipts, etc
+
+0.3.0 - 15 February 2004
+  - added decoding of subject lines from other character sets
+  - fixed bug in "make deb" for making Debian package
+  - some translation fixes in the procmail recipe
+  - portability fixes in the build process
+
+0.2.8 - 3 February 2004
+  - added Czech translation courtesy of Ondrej Suchy
+
+0.2.7 - 12 January 2004
+  - compatibility improvements to procmail recipe; now works with postfix
+  - bugfix in "make index" (only of interest to developers)
+  - run formail with "-I XX:XX" instead of "-IXX:XX"
+
+0.2.4 - 15 December 2003
+  - default subject now "Email queued by JMBA" - "JMBA:" causes problems
+  - improved bounce detection in procmail recipe
+  - procmail recipe reordered to match messages more quickly
+  - notice added to example about putting it AFTER mailing list rules
+
+0.2.0 - 13 December 2003
+  - added "-p" / "--procmail" option, to output example procmailrc
+  - added "-b" / "--bounce" option, to process bounced messages
+
+0.1.0 - 22 November 2003
+  - delivery into the queue implemented
+  - replying implemented
+  - recognition of replies to our replies implemented
+  - redelivery (-q) implemented
+  - minor tidyups of option parsing
+
+0.0.1 - 21 November 2003
+  - package created
+  - first draft of man page written

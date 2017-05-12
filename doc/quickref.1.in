@@ -1,0 +1,493 @@
+.TH @UCPACKAGE@ 1 "February 2006" Linux "User Manuals"
+.SH NAME
+@PACKAGE@ \- junk mail buffering agent
+.SH SYNOPSIS 
+\fB@PACKAGE@\fR
+[\fI-d QUEUEDIR\fR]
+[\fI-m MSGFILE\fR]
+[\fI-s SUBJECT\fR]
+[\fI-FbtTv\fR]
+[\fI-f NUM\fR[\fI,KB\fR]]
+.br
+\fB@PACKAGE@\fR
+[\fI-d QDIR\fR]
+[\fI-e EXPIRY\fR]
+[\fI-x CMD\fR]
+\fI-q\fR [-- \fICOMMAND...\fR]
+.br
+\fB@PACKAGE@\fR
+\fI-S\fR
+.br
+\fB@PACKAGE@\fR
+\fI-\fR[\fIp|h|l|V\fR]
+
+.SH DESCRIPTION
+.B @PACKAGE@
+is a tool to queue email until the sender's email address has been verified,
+at which point the original email is delivered.
+
+What this means is that when
+.B @PACKAGE@
+receives an email, it puts that email into a queue instead of delivering it
+to you, and sends a message to the sender of the email.  If the sender of
+the email responds correctly to
+.BR @PACKAGE@ 's
+message, the original email is unfrozen from the queue and delivered to you.
+If they do not, the original email eventually expires and you never see it.
+
+.B @PACKAGE@
+is designed to be used in conjunction with a spam filter such as
+.BR qsf (1);
+when the spam filter says it thinks an email is spam, it can be passed to
+.BR @PACKAGE@ ,
+which can then verify whether a real person sent it or not.
+
+This works on the assumption that senders of spam won't reply to the email
+address in the headers, but senders of real email will.  The vast majority
+of spam is sent with forged envelope sender addresses so it always appears
+to have come from an invalid address.
+
+For correct operation, four things are needed:
+
+.TP
+.B 1.
+Deliver any email, without question, if the
+.B $1
+parameter is
+.BR @UCPACKAGE@PASSTHROUGH .
+.TP
+.B 2.
+Pass any email with a subject line containing the reply email's
+.I SUBJECT
+(as defined by
+.BR \-s " / " \-\-subject )
+to
+.BR @PACKAGE@ ,
+and do not deliver it.
+.TP
+.B 3.
+Pass any other email you want filtered, e.g. email that
+.BR qsf (1)
+or other spam filters suggest is spam, to
+.BR @PACKAGE@ ,
+and do not deliver it.
+.TP
+.B 4.
+Regularly run
+.B @PACKAGE@ -q
+to deliver any queued email into your mailbox whose sender has verified
+their existence.
+
+.P
+
+See the
+.B EXAMPLES
+section for examples of how this can be done.
+
+.SH OPTIONS
+The
+.B @PACKAGE@
+options are listed below.
+.TP
+.BI "\-d, \-\-queue-dir " DIR
+Store queued messages in
+.IR DIR ,
+instead of the default of
+.BR $HOME/.@PACKAGE@/queue .
+.TP
+.BI "\-e, \-\-expiry-time " DAYS
+Expire queued messages after
+.I DAYS
+days, instead of the default of 28.
+.TP
+.BI "\-m, \-\-message-file " FILE
+Read the reply template from
+.I FILE
+instead of the default of
+.BR $HOME/.@PACKAGE@/template .
+See the
+.B FILES
+section for information on the contents of this file.
+.TP
+.BI "\-D, \-\-discard-dir " DIR
+Store discarded messages in
+.IR DIR ,
+instead of the default of
+.BR $HOME/.@PACKAGE@/discarded .
+See the
+.B FILES
+section for more information.
+.TP
+.BI "\-L, \-\-log-file " FILE
+Enable logging, and write logs to
+.I FILE
+instead of the default of
+.BR $HOME/.@PACKAGE@/log .
+.TP
+.BI "\-x, \-\-discard-command " COMMAND
+Each time a message is discarded, run
+.I COMMAND
+with the message on standard input.
+This can be useful for retraining spam filters; for instance the
+command could be
+.BR "qsf --mark-spam" .
+Note that
+.I COMMAND
+should be quoted from the shell so it appears as one argument.
+.TP
+.BI "\-s, \-\-subject " STRING
+Use
+.I STRING
+as the subject line of each reply, instead of the default of
+"Email queued by @UCPACKAGE@".  A message ID string will be added to the end
+of this string.
+.TP
+.B \-t, \-\-no\-to\-self
+Discard any email whose "From:" and "To:" addresses are the same,
+instead of generating replies.  This is enabled by default.
+.TP
+.B \-T, \-\-to\-self, \-\-allow\-to\-self
+Allow email whose "From:" and "To:" addresses are the same to generate
+replies.
+.TP
+.B \-v, \-\-verbose
+Log information about what
+.B @PACKAGE@
+is doing to the log file
+.BR "" ( $HOME/.@PACKAGE@/log
+by default).
+.TP
+.BI "\-f, \-\-flood-check " NUM[,KB]
+Before queueing a message, check the last
+.B KB
+kilobytes of the log file (default 50) for messages from the same sender
+address which were queued but which have not yet bounced or been unlocked. 
+If there are more than
+.B NUM
+of them (default 20), discard the message instead of queueing it.  This
+helps prevent flooding caused by brain-dead autoresponders, and is enabled
+by default.
+.TP
+.B \-F, \-\-no-flood-check
+Switch off flood checking.
+.TP
+.B \-b, \-\-bounce
+Assume that the email on standard input is a bounce message.  The email is
+not queued, and if a valid queue ID is found within the email, the queued
+email it refers to is deleted.  This allows queued messages from invalid
+senders to be removed from the queue early.
+.TP
+.BI "\-q, \-\-queue " "-- COMMAND"
+For every message in the queue that has been flagged as OK, run
+.I COMMAND
+with the message on standard input and delete the message if the command
+exited successfully.  All subsequent command line items are taken as part of
+the command, eg
+.BR "@PACKAGE@ -q -- procmail -a @UCPACKAGE@PASSTHROUGH -d $LOGNAME" .
+The default command, if none is specified, is
+.BR "procmail -a @UCPACKAGE@PASSTHROUGH -d $LOGNAME" .
+.TP
+.B \-S, \-\-decode-subject
+Read an email on standard input, find the first subject line, decode it if
+it is encoded, and output it on standard output.
+.TP
+.B \-p, \-\-procmail
+Print an example
+.BR procmail (1)
+recipe on standard output and exit successfully.
+.TP
+.B \-h, \-\-help
+Print a usage message on standard output and exit successfully.
+.TP
+.B \-l, \-\-license
+Print details of the program's license on standard output and exit
+successfully.
+.TP
+.B \-V, \-\-version         
+Print version information on standard output and exit successfully.
+
+.SH FILES
+These files and directories are created automatically if they do not exist
+and you have not specified an alternative.
+.TP
+.B $HOME/.@PACKAGE@/queue
+The default queue directory.  This is where queued messages are stored.
+Make sure there is enough space in this directory to store plenty of queued
+mail.
+.TP
+.B $HOME/.@PACKAGE@/template
+The default reply template.  The reply template is the message that gets
+sent in reply to any incoming email, and
+.B must
+contain the string
+.B {MESSAGEKEY}
+(all capitals, surrounded by {} curly braces) somewhere.  The
+.B {MESSAGEKEY}
+text is replaced by a special string which identifies the original message. 
+The recipient must reply back, with the subject line unchanged and the
+message body containing this string, for their original message to be
+unfrozen.
+
+The template can also contain
+.BR {MESSAGECODE} ,
+which is replaced by just the 32-character hex code on its own,
+.BR {USER} ,
+which is replaced by the username that
+.B @PACKAGE@
+is running under,
+.BR {SENDER} ,
+which is replaced by the email address of the original sender,
+.BR {RECIPIENT} ,
+which is replaced by the email address the message was sent to (i.e. your
+email address) if it appeared in the
+.B To:
+header - or "<unknown>" if it didn't - and
+.BR {ORIGINAL} ,
+which is replaced by an excerpt (around 9 lines) of the message
+.B @PACKAGE@
+is replying to.
+.TP
+.B $HOME/.@PACKAGE@/discarded
+If this directory exists (it is not created by default), then any messages
+that are thrown out of the queue due to either a bounce message or a reply
+timeout will be moved here instead of deleted.  This can be useful if you
+want to keep a copy of old spam to retrain spam filters with.
+.B Note:
+this directory must be on the same filesystem as the queue directory,
+otherwise it will not work.
+.TP
+.B $HOME/.@PACKAGE@/log
+The default log file, written to if the
+.B \-v
+(verbose) option is given.
+
+.SH EXAMPLES
+
+The following can be added to your
+.B .procmailrc
+file, after any special filtering you already do for mailing lists and such:
+
+.RS
+ #
+ # Example procmail recipe
+ #
+ # Put this AFTER rules for mailing lists,
+ # so that we don't trip up on them!
+ #
+ 
+ # First, we'll set up some variables.
+ #
+ @UCPACKAGE@MAINEMAIL="your@own.mail.address"
+ @UCPACKAGE@SUBJECT="Email queued by @UCPACKAGE@"
+ TESTPASS=$1
+ SUBJECT=`@PACKAGE@ -S`
+ 
+ # Step 1:
+ # Filter messages only if the pass-through flag
+ # is not set and the message is small.
+ #
+ :0
+ * ! TESTPASS ?? @UCPACKAGE@PASSTHROUGH
+ * ! > 500000
+ {
+    # Step 2:
+    # Discard any looping mail.
+    #
+    :0
+    * $ ^X-Loop: $@UCPACKAGE@MAINEMAIL
+    /dev/null
+ 
+    # Step 3:
+    # Deal with any bounces.
+    #
+    :0
+    * ^FROM_MAILER
+    {
+       :0 Bw
+       * $ SUBJECT ?? .*$@UCPACKAGE@SUBJECT
+       | @PACKAGE@ -v -b
+ 
+       :0 Bw
+       * $ ^X-Loop: $@UCPACKAGE@MAINEMAIL
+       | @PACKAGE@ -v -b
+    }
+ 
+    # Step 4:
+    # Pass any sender's replies straight to the program.
+    #
+    :0 w
+    * ! ^FROM_DAEMON
+    * $ SUBJECT ?? .*$@UCPACKAGE@SUBJECT
+    | @PACKAGE@ -v -s "$@UCPACKAGE@SUBJECT"
+ 
+    # Step 5:
+    # Check whether message is spam.
+    #
+    :0 wf
+    | qsf -ra
+ 
+    # Step 6:
+    # Drop potential spam into the
+    # queue, and send the reply email.
+    #
+    :0
+    * ! ^FROM_DAEMON
+    * !$ SUBJECT ?? .*$@UCPACKAGE@SUBJECT
+    * ! ^X-Spam: NO
+    {
+       # Generate the reply.
+       :0 wf
+       | @PACKAGE@ -t -v -s "$@UCPACKAGE@SUBJECT"
+ 
+       :0 Ha
+       {
+          # Discard unaddressed responses.
+          :0
+          * ! ^To
+          /dev/null
+ 
+          # Add our loop catching header.
+          :0 wf
+          | formail -A "X-Loop: $@UCPACKAGE@MAINEMAIL"
+ 
+          # Add our From: address.
+          :0 wfa
+          | formail -I "From: $@UCPACKAGE@MAINEMAIL"
+ 
+          # Send the reply.
+          :0 wa
+          | $SENDMAIL $SENDMAILFLAGS -t
+       }
+    }
+ }
+ 
+ # Step 7:
+ # Teach the spam filter that passed-through
+ # messages are not spam.
+ #
+ :0 wc
+ * TESTPASS ?? @UCPACKAGE@PASSTHROUGH
+ | qsf -Ma
+ 
+ #
+ # End of example.
+ # Don't forget to add "0 * * * * @PACKAGE@ -v -q"
+ # to your crontab!
+ #
+.RE
+
+Note that the above recipe can be generated by doing
+.BR "@PACKAGE@ -p > SOME-FILE" .
+
+Then, add the following to your
+.BR crontab (5)
+using the
+.B crontab -e
+command, to deliver any queued messages that have been verified once an hour:
+
+.RS
+ 0 * * * * @PACKAGE@ -v -q
+.RE
+
+If you do not want to use
+.BR qsf (1)
+as your spam filter, replace
+.B qsf -ra
+in the example procmail recipe above with a command that adds a header
+saying whether the email is spam, replace
+.B qsf -Ma
+with a command that trains the spam filter to accept the given email on
+standard input as non-spam, and replace the
+.B * ! ^X-Spam: NO
+line in step 6 with a rule that uses your spam filter's inserted header to
+cause step 6 to be skipped if the email is not spam.
+
+For more on
+.BR procmail (1)
+recipes, see the
+.BR procmailrc (5)
+and
+.BR procmailex (5)
+manual pages.  For more on command scheduling, see the
+.BR crontab (1)
+and
+.BR crontab (5)
+manual pages.
+
+.SH NOTES
+
+If the full path of
+.B procmail
+is not found at compile time, then it will be called without a path. This
+means that users who are not supposed to have shell accounts, but who have
+write access to a directory in the default
+.B $PATH
+(such as
+.B ~/bin
+on some systems),
+could upload a fake
+.B procmail
+and gain shell access.
+
+Also, some systems do not set
+.B $PATH
+when running cron jobs.
+
+It is therefore advisable to supply the full path when specifying a
+.B procmail
+command with the
+.BI "\-q " "-- COMMAND"
+option. The default command contains the full path if no warning was
+generated at compile time.
+
+This same problem exists with
+.BR formail ,
+which is called by
+.BR @PACKAGE@ ,
+but this can only be overcome if the full path to
+.B formail
+is correctly determined at compile time.
+
+.SH AUTHOR
+The project maintainer is:
+
+.RS
+Andrew Wood <andrew.wood@ivarch.com>
+.br
+.I http://www.ivarch.com/
+.RE
+
+Credit is also due to:
+
+.RS
+Ondrej Suchy
+.br
+(provided Czech translation and code suggestions)
+.RE
+
+.RS
+Nick Rosier
+.br
+(suggested logging)
+.RE
+
+Project home page:
+
+.RS
+.I http://www.ivarch.com/programs/@PACKAGE@.shtml
+.RE
+
+.SH BUGS
+If you find any bugs, please contact the author, either by email or by
+using the contact form on the web site.
+
+.SH "SEE ALSO"
+.BR procmail (1),
+.BR crontab (1),
+.BR procmailrc (5),
+.BR procmailex (5),
+.BR crontab (5),
+.BR qsf (1)
+
+.SH LICENSE
+This is free software, distributed under the ARTISTIC license.
